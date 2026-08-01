@@ -8,13 +8,17 @@ Get the latest version from the [Releases page](https://github.com/rmgirish/stic
 
 | File | What it is |
 | --- | --- |
-| `Sticky Wall Setup X.Y.Z.exe` | Windows installer — double-click to install |
+| `Sticky Wall Setup X.Y.Z.exe` | Windows installer (wizard) — installs with Start Menu + desktop shortcut |
 | `Sticky-Wall-Portable-X.Y.Z.exe` | Portable version — just run it, no install needed |
+| `Sticky Wall-X.Y.Z-win.zip` | ZIP — extract anywhere and run `Sticky Wall.exe` |
 
 Direct download (v1.0.1):
 
 - [Installer](https://github.com/rmgirish/sticky-wall/releases/download/v1.0.1/Sticky%20Wall%20Setup%201.0.1.exe)
 - [Portable](https://github.com/rmgirish/sticky-wall/releases/download/v1.0.1/Sticky-Wall-Portable-1.0.1.exe)
+- [ZIP](https://github.com/rmgirish/sticky-wall/releases/download/v1.0.1/Sticky%20Wall-1.0.1-win.zip)
+
+> Windows SmartScreen may warn "Windows protected your PC" because the app is not code-signed. Click **More info** → **Run anyway**. If the ZIP still won't run, right-click it → **Properties** → **Unblock**.
 
 ## How to use
 
