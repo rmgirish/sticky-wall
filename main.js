@@ -211,7 +211,14 @@ function createWindows() {
     if (level >= 2) logError('wall console', message);
   });
 
-  // the wall opens automatically as soon as the app starts
+  // the wall opens automatically as soon as the app starts.
+  // using `on` (not `once`) so a crashed renderer that reloads re-syncs state
+  wallWin.webContents.on('did-finish-load', () => {
+    wallWin.setIgnoreMouseEvents(!wallOpen, { forward: true });
+    if (!wallWin.webContents.isDestroyed()) {
+      wallWin.webContents.send('wall:set', wallOpen);
+    }
+  });
   wallWin.webContents.once('did-finish-load', () => {
     wallWin.setIgnoreMouseEvents(true, { forward: true });
     wallWin.webContents.send('wall:set', false);
@@ -251,7 +258,7 @@ function createWindows() {
   tabWin.webContents.on('console-message', (_e, level, message) => {
     if (level >= 2) logError('tab console', message);
   });
-  tabWin.webContents.once('did-finish-load', () => {
+  tabWin.webContents.on('did-finish-load', () => {
     if (!getTabVisible()) {
       tabWin.hide();
     } else {
