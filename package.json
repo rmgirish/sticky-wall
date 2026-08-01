@@ -1,6 +1,6 @@
 {
   "name": "sticky-wall",
-  "version": "1.0.5",
+  "version": "1.0.8",
   "description": "Desktop sticky note wall - pull the wall from the side of your screen and stick notes on it",
   "author": "rmgirish",
   "main": "main.js",

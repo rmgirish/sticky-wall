@@ -14,6 +14,7 @@ let tray = null;
 let wallOpen = false;
 let tabActive = false;
 let hoverTimer = null;
+let quitting = false;
 
 const dataFile = () => path.join(app.getPath('userData'), 'notes.json');
 const prefsFile = () => path.join(app.getPath('userData'), 'prefs.json');
@@ -30,6 +31,7 @@ function logError(tag, err) {
 }
 process.on('uncaughtException', (err) => logError('uncaughtException', err));
 process.on('unhandledRejection', (reason) => logError('unhandledRejection', reason));
+app.on('before-quit', () => { quitting = true; });
 
 // only allow a single running instance
 if (!app.requestSingleInstanceLock()) {
@@ -108,7 +110,10 @@ function wallOpenX() {
 // makes Windows/DWM silently grow their width, pushing the header buttons out
 // of view). Instead the wall content slides inside the fixed window via CSS.
 function setWallOpen(open) {
-  if (!wallWin || wallWin.isDestroyed()) return;
+  if (!wallWin || wallWin.isDestroyed()) {
+    logError('setWallOpen: wall window missing');
+    return;
+  }
   wallOpen = open;
   wallWin.setIgnoreMouseEvents(!open, { forward: true });
   if (!wallWin.webContents.isDestroyed()) {
@@ -117,18 +122,28 @@ function setWallOpen(open) {
 }
 
 function toggleWall() {
-  if (!wallWin) return;
+  if (!wallWin || wallWin.isDestroyed()) {
+    logError('toggleWall: wall window missing, quitting to recover');
+    app.quit();
+    return;
+  }
   if (tabWin) tabWin.moveTop();
   setWallOpen(!wallOpen);
+  logError('toggleWall -> wallOpen=' + !wallOpen);
 }
 
 // Bring the wall back up (used when the app is launched a second time)
 function showWall() {
-  if (!wallWin || wallWin.isDestroyed()) return;
+  if (!wallWin || wallWin.isDestroyed()) {
+    logError('showWall: wall window missing, quitting to recover');
+    app.quit();
+    return;
+  }
   if (tabWin && !tabWin.isDestroyed()) tabWin.moveTop();
   wallWin.moveTop();
   wallWin.showInactive();
   setWallOpen(true);
+  logError('showWall called');
 }
 
 // ---- subtle pull tab: click-through until the cursor gets near it ----
@@ -153,6 +168,7 @@ function setTabVisible(on) {
       tabWin.hide();
     }
   }
+  logError('setTabVisible -> ' + on);
   if (tray) rebuildTrayMenu();
 }
 
@@ -169,6 +185,7 @@ function syncTabHover() {
   if (!tabWin.webContents.isDestroyed()) {
     tabWin.webContents.send('tab:hover', near);
   }
+  logError('tab hover -> ' + near + ' (cursor ' + pt.x + ',' + pt.y + ', bounds ' + b.x + ',' + b.y + ',' + b.width + 'x' + b.height + ')');
 }
 
 function updateTabCursorTracking(enabled) {
@@ -221,16 +238,24 @@ function createWindows() {
 
   wallWin.setAlwaysOnTop(true, 'screen-saver');
   wallWin.loadFile('wall.html');
+  wallWin.on('close', (e) => {
+    if (!quitting) {
+      logError('wall close intercepted (Alt+F4 or system close)');
+      e.preventDefault();
+      setWallOpen(false);
+    }
+  });
+  wallWin.on('closed', () => logError('wall window destroyed'));
   wallWin.webContents.on('render-process-gone', (_e, details) => {
     logError('wall renderer gone', JSON.stringify(details));
     if (details.reason !== 'clean-exit' && !wallWin.isDestroyed()) wallWin.webContents.reload();
   });
+  wallWin.webContents.on('did-fail-load', (_e, code, desc, url) => logError('wall did-fail-load: ' + code + ' ' + desc + ' ' + url));
+  wallWin.webContents.on('unresponsive', () => logError('wall renderer unresponsive'));
   wallWin.webContents.on('console-message', (_e, level, message) => {
-    if (level >= 2) logError('wall console', message);
+    if (level >= 1) logError('wall console[' + level + ']', message);
   });
-
-  // the wall opens automatically as soon as the app starts.
-  // using `on` (not `once`) so a crashed renderer that reloads re-syncs state
+  // re-sync state on any reload (crash recovery)
   wallWin.webContents.on('did-finish-load', () => {
     wallWin.setIgnoreMouseEvents(!wallOpen, { forward: true });
     if (!wallWin.webContents.isDestroyed()) {
@@ -238,6 +263,7 @@ function createWindows() {
     }
   });
   wallWin.webContents.once('did-finish-load', () => {
+    logError('wall did-finish-load fired');
     wallWin.setIgnoreMouseEvents(true, { forward: true });
     wallWin.webContents.send('wall:set', false);
     wallWin.showInactive();
@@ -269,14 +295,25 @@ function createWindows() {
 
   tabWin.setAlwaysOnTop(true, 'screen-saver');
   tabWin.loadFile('tab.html');
+  tabWin.on('close', (e) => {
+    if (!quitting) {
+      logError('tab close intercepted (Alt+F4 or system close)');
+      e.preventDefault();
+      setTabVisible(false);
+    }
+  });
+  tabWin.on('closed', () => logError('tab window destroyed'));
   tabWin.webContents.on('render-process-gone', (_e, details) => {
     logError('tab renderer gone', JSON.stringify(details));
     if (details.reason !== 'clean-exit' && !tabWin.isDestroyed()) tabWin.webContents.reload();
   });
+  tabWin.webContents.on('did-fail-load', (_e, code, desc, url) => logError('tab did-fail-load: ' + code + ' ' + desc + ' ' + url));
+  tabWin.webContents.on('unresponsive', () => logError('tab renderer unresponsive'));
   tabWin.webContents.on('console-message', (_e, level, message) => {
-    if (level >= 2) logError('tab console', message);
+    if (level >= 1) logError('tab console[' + level + ']', message);
   });
   tabWin.webContents.on('did-finish-load', () => {
+    logError('tab did-finish-load fired, tabVisible=' + getTabVisible());
     if (!getTabVisible()) {
       tabWin.hide();
     } else {
@@ -355,7 +392,16 @@ app.on('window-all-closed', () => app.quit());
 
 // ---- IPC ----
 ipcMain.on('wall:toggle', () => toggleWall());
-ipcMain.on('tab:hide', () => setTabVisible(false));
+
+// the x button on the tab hides it for this session only -
+// restarting the app always brings the pull tab back
+ipcMain.on('tab:hide', () => {
+  if (!tabWin || tabWin.isDestroyed()) return;
+  tabActive = false;
+  updateTabCursorTracking(false);
+  tabWin.hide();
+  logError('tab hidden for session');
+});
 ipcMain.on('log:error', (_e, message) => logError('renderer', message));
 
 function writeNotes(data) {

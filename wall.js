@@ -1,4 +1,5 @@
 const bridge = window.api;
+bridge.logError('wall: script loaded');
 
 window.addEventListener('error', (e) => {
   bridge.logError('wall: ' + e.message + ' @ ' + e.filename + ':' + e.lineno);
