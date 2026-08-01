@@ -1,0 +1,43 @@
+{
+  "name": "sticky-wall",
+  "version": "1.0.1",
+  "description": "Desktop sticky note wall - pull the wall from the side of your screen and stick notes on it",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.stickywall.app",
+    "productName": "Sticky Wall",
+    "files": [
+      "main.js",
+      "preload.js",
+      "wall.html",
+      "wall.css",
+      "wall.js",
+      "tab.html",
+      "tab.css",
+      "tab.js"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "Sticky-Wall-Portable-${version}.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}

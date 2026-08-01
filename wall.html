@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
+  <link rel="stylesheet" href="wall.css">
+  <title>Sticky Wall</title>
+</head>
+<body>
+  <div id="wall">
+    <div id="header">
+      <span class="title">Sticky Wall</span>
+      <span class="hint">double-click the wall to add a note</span>
+      <div class="searchWrap">
+      <div class="searchBox">
+        <input id="search" type="text" placeholder="Search notes..." spellcheck="false" autocomplete="off">
+        <button id="searchClear" type="button" title="Clear search" class="hidden">&times;</button>
+      </div>
+      <span id="searchCount" class="hidden"></span>
+    </div>
+    <button id="hideBtn" title="Hide wall">&#x2039;</button>
+    </div>
+    <div id="board"></div>
+  </div>
+
+  <div id="ctxMenu" class="hidden">
+    <div class="ctx-title">Note color</div>
+    <div class="colors">
+      <div class="swatch" data-color="yellow"></div>
+      <div class="swatch" data-color="pink"></div>
+      <div class="swatch" data-color="blue"></div>
+      <div class="swatch" data-color="green"></div>
+      <div class="swatch" data-color="purple"></div>
+      <div class="swatch" data-color="white"></div>
+    </div>
+    <div class="sep"></div>
+    <div class="item" id="ctxDelete">Delete note</div>
+  </div>
+
+  <script src="wall.js"></script>
+</body>
+</html>
