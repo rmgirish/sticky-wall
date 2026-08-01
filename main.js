@@ -142,8 +142,10 @@ function setTabVisible(on) {
   savePrefs(prefs);
   if (tabWin) {
     if (on) {
+      tabActive = false;
       tabWin.showInactive();
       tabWin.setIgnoreMouseEvents(true, { forward: true });
+      tabWin.webContents.send('tab:hover', false);
       updateTabCursorTracking(true);
     } else {
       tabActive = false;
@@ -154,12 +156,28 @@ function setTabVisible(on) {
   if (tray) rebuildTrayMenu();
 }
 
+function syncTabHover() {
+  if (!tabWin || tabWin.isDestroyed()) return;
+  const pt = screen.getCursorScreenPoint();
+  const b = tabWin.getBounds();
+  const pad = 14;
+  const near =
+    pt.x >= b.x - pad && pt.x <= b.x + b.width + pad &&
+    pt.y >= b.y - pad && pt.y <= b.y + b.height + pad;
+  tabActive = near;
+  tabWin.setIgnoreMouseEvents(!near, { forward: true });
+  if (!tabWin.webContents.isDestroyed()) {
+    tabWin.webContents.send('tab:hover', near);
+  }
+}
+
 function updateTabCursorTracking(enabled) {
   if (hoverTimer) {
     clearInterval(hoverTimer);
     hoverTimer = null;
   }
   if (!enabled || !tabWin || tabWin.isDestroyed()) return;
+  syncTabHover();
   hoverTimer = setInterval(() => {
     const pt = screen.getCursorScreenPoint();
     const b = tabWin.getBounds();
