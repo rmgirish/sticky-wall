@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('api', {
   loadNotes: () => ipcRenderer.invoke('notes:load'),
   saveNotes: (notes) => ipcRenderer.invoke('notes:save', notes),
+  saveNotesSync: (notes) => ipcRenderer.sendSync('notes:save', notes),
   toggleWall: () => ipcRenderer.send('wall:toggle'),
   hideTab: () => ipcRenderer.send('tab:hide'),
   onTabHover: (callback) => ipcRenderer.on('tab:hover', (_event, near) => callback(near)),

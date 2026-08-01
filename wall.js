@@ -256,7 +256,9 @@ document.getElementById('ctxDelete').addEventListener('click', () => {
 
 // ----- header buttons -----
 document.getElementById('hideBtn').addEventListener('click', () => bridge.toggleWall());
-window.addEventListener('beforeunload', () => bridge.saveNotes({ notes }));
+window.addEventListener('beforeunload', () => {
+  bridge.saveNotesSync({ notes });
+});
 
 // ----- search -----
 const searchInput = document.getElementById('search');

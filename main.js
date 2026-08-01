@@ -203,7 +203,10 @@ function createWindows() {
 
   wallWin.setAlwaysOnTop(true, 'screen-saver');
   wallWin.loadFile('wall.html');
-  wallWin.webContents.on('render-process-gone', (_e, details) => logError('wall renderer gone', JSON.stringify(details)));
+  wallWin.webContents.on('render-process-gone', (_e, details) => {
+    logError('wall renderer gone', JSON.stringify(details));
+    if (details.reason !== 'clean-exit' && !wallWin.isDestroyed()) wallWin.webContents.reload();
+  });
   wallWin.webContents.on('console-message', (_e, level, message) => {
     if (level >= 2) logError('wall console', message);
   });
@@ -241,7 +244,10 @@ function createWindows() {
 
   tabWin.setAlwaysOnTop(true, 'screen-saver');
   tabWin.loadFile('tab.html');
-  tabWin.webContents.on('render-process-gone', (_e, details) => logError('tab renderer gone', JSON.stringify(details)));
+  tabWin.webContents.on('render-process-gone', (_e, details) => {
+    logError('tab renderer gone', JSON.stringify(details));
+    if (details.reason !== 'clean-exit' && !tabWin.isDestroyed()) tabWin.webContents.reload();
+  });
   tabWin.webContents.on('console-message', (_e, level, message) => {
     if (level >= 2) logError('tab console', message);
   });
@@ -327,6 +333,15 @@ ipcMain.on('wall:toggle', () => toggleWall());
 ipcMain.on('tab:hide', () => setTabVisible(false));
 ipcMain.on('log:error', (_e, message) => logError('renderer', message));
 
+function writeNotes(data) {
+  try {
+    fs.mkdirSync(path.dirname(dataFile()), { recursive: true });
+    fs.writeFileSync(dataFile(), JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Failed to save notes:', err);
+  }
+}
+
 ipcMain.handle('notes:load', () => {
   try {
     return JSON.parse(fs.readFileSync(dataFile(), 'utf8'));
@@ -335,11 +350,5 @@ ipcMain.handle('notes:load', () => {
   }
 });
 
-ipcMain.handle('notes:save', (_e, data) => {
-  try {
-    fs.mkdirSync(path.dirname(dataFile()), { recursive: true });
-    fs.writeFileSync(dataFile(), JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.error('Failed to save notes:', err);
-  }
-});
+ipcMain.handle('notes:save', (_e, data) => writeNotes(data));
+ipcMain.on('notes:save', (_e, data) => writeNotes(data));
