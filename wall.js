@@ -6,6 +6,11 @@ window.addEventListener('error', (e) => {
 
 const board = document.getElementById('board');
 const ctxMenu = document.getElementById('ctxMenu');
+const emptyState = document.getElementById('emptyState');
+
+function updateEmptyState() {
+  emptyState.classList.toggle('hidden', notes.length > 0);
+}
 
 const NOTE_W = 172;
 const COLORS = ['yellow', 'pink', 'blue', 'green', 'purple', 'white'];
@@ -106,6 +111,7 @@ function createNote(data) {
   notes.push(note);
   makeNoteEl(note);
   applySearch();
+  updateEmptyState();
   saveSoon();
   return note;
 }
@@ -116,6 +122,7 @@ function deleteNote(id) {
   const el = noteEl(numId);
   if (el) el.remove();
   applySearch();
+  updateEmptyState();
   saveSoon();
 }
 
@@ -151,8 +158,8 @@ function onNotePointerDown(e, el) {
 
   const move = (ev) => {
     const brect = board.getBoundingClientRect();
-    const x = ev.clientX - brect.left - offX;
-    const y = ev.clientY - brect.top - offY;
+    const x = ev.clientX - brect.left + board.scrollLeft - offX;
+    const y = ev.clientY - brect.top + board.scrollTop - offY;
     el.style.left = Math.max(-70, Math.min(x, brect.width - rect.width + 70)) + 'px';
     el.style.top = Math.max(-50, Math.min(y, brect.height - rect.height + 50)) + 'px';
   };
@@ -178,9 +185,9 @@ function onNotePointerDown(e, el) {
 function onNoteContextMenu(e, el) {
   e.preventDefault();
   e.stopPropagation();
-  ctxTarget = el;
   const n = findNote(el.dataset.id);
   if (!n) return;
+  ctxTarget = el;
 
   ctxMenu.querySelectorAll('.swatch').forEach((sw) => {
     sw.classList.toggle('current', sw.dataset.color === n.color);
@@ -207,8 +214,8 @@ board.addEventListener('dblclick', (e) => {
   if (e.target !== board) return;
   const brect = board.getBoundingClientRect();
   createNote({
-    x: e.clientX - brect.left - NOTE_W / 2,
-    y: e.clientY - brect.top - 70,
+    x: e.clientX - brect.left + board.scrollLeft - NOTE_W / 2,
+    y: e.clientY - brect.top + board.scrollTop - 70,
   });
 });
 
@@ -308,6 +315,7 @@ document.addEventListener('keydown', (e) => {
     nextId = notes.reduce((m, n) => Math.max(m, n.id || 0), 0) + 1;
     topZ = notes.reduce((m, n) => Math.max(m, n.z || 10), 10);
   }
+  updateEmptyState();
 })();
 
 bridge.onWallSet((open) => {
